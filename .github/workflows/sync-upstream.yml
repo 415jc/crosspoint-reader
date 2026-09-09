@@ -1,0 +1,53 @@
+name: Sync develop with upstream
+
+on:
+  schedule:
+    # Runs daily at 13:00 UTC. Edit the cron expression to change the cadence.
+    - cron: "0 13 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-upstream-develop
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out develop
+        uses: actions/checkout@v4
+        with:
+          ref: develop
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Add upstream remote
+        run: git remote add upstream https://github.com/crosspoint-reader/crosspoint-reader.git
+
+      - name: Fetch upstream
+        run: git fetch upstream develop
+
+      - name: Merge upstream/develop
+        id: merge
+        run: |
+          if git merge upstream/develop --no-edit; then
+            echo "conflict=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "conflict=true" >> "$GITHUB_OUTPUT"
+            git merge --abort
+            echo "::error::Merge conflict between fork develop and upstream/develop. Aborted; nothing was pushed. Resolve manually."
+            exit 1
+          fi
+
+      - name: Push updated develop
+        if: steps.merge.outputs.conflict == 'false'
+        run: git push origin develop
+
