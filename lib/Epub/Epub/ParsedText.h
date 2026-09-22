@@ -54,6 +54,7 @@ class ParsedText {
   std::vector<VisibleOffsetRebase> visibleOffsetRebases;
   std::deque<std::string> rubyTexts;
   BlockStyle blockStyle;
+  uint8_t wordSpacingPercent = 100;
   bool extraParagraphSpacing;
   bool hyphenationEnabled;
   bool focusReadingEnabled;
@@ -87,7 +88,7 @@ class ParsedText {
   void extractLine(size_t breakIndex, int pageWidth, const std::vector<uint16_t>& wordWidths,
                    const std::vector<bool>& continuesVec, const std::vector<bool>& noSpaceBeforeVec,
                    const std::vector<size_t>& lineBreakIndices,
-                   const std::function<void(std::shared_ptr<TextBlock>, uint32_t)>& processLine,
+                   const std::function<void(std::unique_ptr<TextBlock>, uint32_t)>& processLine,
                    const GfxRenderer& renderer, int fontId);
   std::vector<uint16_t> calculateWordWidths(const GfxRenderer& renderer, int fontId);
 
@@ -118,6 +119,7 @@ class ParsedText {
   size_t size() const { return words.size(); }
   bool isEmpty() const { return words.empty(); }
   void layoutAndExtractLines(const GfxRenderer& renderer, int fontId, uint16_t viewportWidth,
-                             const std::function<void(std::shared_ptr<TextBlock>, uint32_t)>& processLine,
-                             bool includeLastLine = true);
+                             const std::function<void(std::unique_ptr<TextBlock>, uint32_t)>& processLine,
+                             bool includeLastLine = true, int8_t characterSpacing = 0,
+                             uint8_t wordSpacingPercent = 100);
 };
